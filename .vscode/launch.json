@@ -1,0 +1,26 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+
+        {
+            "name": "C++ Launch",
+            "type": "cppdbg",
+            "request": "launch",
+            "program": "${workspaceRoot}/build/mapindexer/mapindexer",
+            "args": [ "../iceland.osm.pbf" ],
+            "stopAtEntry": true,
+            "cwd": "${workspaceRoot}/build",
+            "targetArchitecture": "x64",
+            "launchCompleteCommand": "exec-run",
+            "sourceFileMap": { },
+            "linux": {
+              "MIMode": "gdb",
+              "miDebuggerPath": "/usr/bin/gdb"
+          }
+        }
+
+    ]
+}

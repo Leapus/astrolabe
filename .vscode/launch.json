@@ -10,7 +10,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceRoot}/build/mapindexer/mapindexer",
-            "args": [ "../iceland.osm.pbf" ],
+            "args": [ "../../iceland.osm.pbf" "../../test.pbf" ],
             "stopAtEntry": true,
             "cwd": "${workspaceRoot}/build",
             "targetArchitecture": "x64",

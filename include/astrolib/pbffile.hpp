@@ -27,7 +27,10 @@ class protobuf_file:public leapus::io::mmap_file{
     using base_type=leapus::io::mmap_file;
 
 public:
-    protobuf_file( const std::filesystem::path & );
+    using mmap_file::mmap_file;
+
+    //protobuf_file( const std::filesystem::path &, bool writeable, size_type mapping_size);
+    //protobuf_file( const std::filesystem::path &, bool writeable);
     void read( pos_type pos, size_type sz, ::google::protobuf::Message &target) const;
 };
 

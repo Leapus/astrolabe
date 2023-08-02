@@ -18,10 +18,17 @@ class osm_file;
 
 /* 
        Walk the blobs present in the file, which are compressible blocks
-       which the file is broken into so that you can decompress just the section you want.
+       into which the file is broken so that you can decompress just the section you want.
        There's not much interesting in the file header blobs except for the bounding boxes,
        which are defined as optional, so we'd might as well calculate our own since we're
        spacially indexing anyway.
+
+       Note that blob disk-size is discouraged by OSM documentation from being greater than 32kiB,
+       and prohibited from exceeding 64kiB. For the uncompressed data that rule is 16/32Mib, though
+       a compression ratio of 512:1 sounds awfully (delusionally) optimistic. Anyway, for the purpose
+       of contemplating order-of-magnitude, you're looking at a typical data size of about 128kiB-
+       512kiB because compression seldom does better than 2:1, and rarely like 4:1. They seem sized 
+       roughly suitably for assigning as a worker thread task, which was probably a design goal.
 */
 template<class File=osm_file>
 class blob_iterator{
@@ -117,7 +124,10 @@ public:
     using blob_iterator_type=blob_iterator<osm_file>;
     using const_blob_iterator_type=blob_iterator<const osm_file>;
 
+    osm_file();
     osm_file( const std::filesystem::path & );
+
+    osm_file &operator=( osm_file && ) = default;
 
     //Reads a raw int32 in network byte order and converts it to host order
     blob_header_size_type read_raw_int32(pos_type pos) const;

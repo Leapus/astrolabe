@@ -21,7 +21,7 @@ public:
     using exception::exception;
 };
 
-template< template<typename> class Ptr=meta::bare_pointer>
+template< template<typename> class Ptr=meta::template smart_ptr>
 class random_access_file{
 
 public:
@@ -32,6 +32,7 @@ public:
     template<typename T>
     using const_pointer_type=Ptr<const T>;
 
+    using offset_type=std::ptrdiff_t;
     using size_type=::size_t;
     using pos_type=::size_t;
 
@@ -58,12 +59,21 @@ public:
 
     template<typename T>
     const_pointer_type<T> read(pos_type position, const leapus::meta::type<const T> &) const{
-        return  { (const T *)this->read(position, sizeof(const T)) };
+        return  { (const T *) std::addressof(*this->read(position, sizeof(const T))) };
     }
 
     //Offer a read-ahead hint. It might be ignored and be a NOP.
-    virtual inline bool readahead(pos_type pos, size_type sz){ return false; };
+    //It seems like it can be reasonably const since it doesn't alter the class state,
+    //nor logically affect the state or output, just the performance.
+    virtual inline bool readahead(pos_type pos, size_type sz) const{ return false; };
+
     virtual size_type size() const = 0;
+
+    //thread-safe resize
+    //Beware that a negative value means "truncate"
+    //Returns the offset of the chunk appended
+    virtual pos_type grow(offset_type d) = 0;
+
 };
 
 }

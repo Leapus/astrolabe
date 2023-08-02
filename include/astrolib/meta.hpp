@@ -5,6 +5,7 @@
 */
 
 #include <cstdint>
+#include <utility>
 
 namespace leapus::meta{
 
@@ -14,7 +15,6 @@ template<typename T>
 struct type{
     using t=T;
 };
-
 
 template<typename Func>
 struct guard_base{
@@ -65,6 +65,10 @@ guard(const Data &d, const Func &) -> guard<Data, Func>;
 template<typename Func>
 guard(const Func &) -> guard<Func>;
 
+//
+// These model their boost:: analogues, and cv is never removed,
+// just added if T has it.
+//
 
 //::type is U, unless T is const, then it is const U
 template<typename T, typename U>
@@ -76,6 +80,30 @@ template<typename T, typename U>
 struct copy_const<const T, U>{
     using type=const U;
 };
+
+template<typename T, typename U>
+using copy_const_t=typename copy_const<T,U>::type;
+
+template<typename T, typename U>
+struct copy_volatile{
+    using type=U;
+};
+
+template<typename T, typename U>
+struct copy_volatile<volatile T, U>{
+    using type=volatile U;
+};
+
+template<typename T, typename U>
+using copy_volatile_t=typename copy_volatile<T,U>::type;
+
+template<typename T, typename U>
+struct copy_cv{
+    using type=copy_volatile_t<T, copy_const_t<T, U>>;
+};
+
+template<typename T, typename U>
+using copy_cv_t=typename copy_cv<T,U>::type;
 
 //
 // Realistically, this is probably dumb because if this were done in a loop, 
@@ -140,5 +168,89 @@ struct endian{
 template<typename T>
 using bare_pointer = T *;
 
-}
+// Generic smart pointer which is just an interface over a dumb pointer or other smart pointer.
+// Can also be used as a base class for an actual smart pointer.
+template<typename T, typename Ptr=T *>
+class smart_ptr{
+public:
+    using internal_pointer_type=Ptr;
+    using element_type=T;
+    using pointer_type=T *;
+    using reference_type=T &;
 
+protected:
+    internal_pointer_type m_ptr;
+
+public:
+    smart_ptr( const internal_pointer_type &ptr ):
+        m_ptr(ptr){}
+
+    //If T is non-const, then this is equivalent to the default copy constructor.
+    //Otherwise, if T is const, it permits copying from the non-const instantiation to the const one.
+    smart_ptr( const smart_ptr< std::remove_const_t<T>, internal_pointer_type > &rhs ):
+        m_ptr(rhs.ptr){}
+
+    bool operator==(const smart_ptr &rhs) const{
+        return m_ptr == rhs.m_ptr;
+    }
+
+    bool operator!() const{ return !m_ptr; }
+    reference_type get() const{ return *m_ptr; }
+    reference_type operator*() const{ return get(); }
+    pointer_type operator->() const{ return m_ptr; }
+    reference_type operator[](::size_t i){ return m_ptr[i]; }
+
+    smart_ptr &operator++(){
+        ++m_ptr;
+        return *this;
+    }
+
+    smart_ptr &operator--(){
+        --m_ptr;
+        return *this;
+    }
+
+    smart_ptr operator+( ::size_t n) const{ return {m_ptr + n}; }
+    smart_ptr operator-( ::size_t n) const{ return {m_ptr - n}; }
+};
+
+//For easily calling { obj.f() const } given non-const obj & via
+//constify(obj).f()
+template<typename T>
+auto &constify(const T &obj){ return obj; }
+
+/*
+    Screwing around
+*/
+
+/*
+*
+* Implement a list of types as overloads of a function, so that you can look up
+* a type by resolving the overload
+*
+*/
+/*
+template<class... Pairs>
+class type_map;
+
+template<typename K, typename V, class... L>
+class type_map< std::pair<K,V>, L ... >:public type_map<L...>{
+protected:
+    K f(V){};
+};
+
+template< typename K, typename V>
+class type_map<std::pair<K,V>>{
+protected:
+    K f(V){};
+
+public:
+    template<typename T>
+    using get=decltype( f( std::declval<T>() ) );
+};
+
+template<typename T, typename... L>
+using if_any_of=typename type_map< std::pair<L,L>... >::template get<T>;
+*/
+
+}

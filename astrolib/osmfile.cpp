@@ -8,10 +8,13 @@ using namespace google::protobuf;
 
 
 osm_file::osm_file( const std::filesystem::path &path):
-    base_type(path){
+    base_type(path, false){
     
     //read_blob_header(0, m_header_header);
 }
+
+osm_file::osm_file():
+    base_type(){}
 
 ::int32 osm_file::read_raw_int32(pos_type pos) const{
     return meta::endian::convert_endian(
